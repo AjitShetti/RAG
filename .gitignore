@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment files
+.env
+.env.*
+!.env.example
+!.env.test
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker volumes (bind-mounted, not tracked)
+postgres_data/
+opensearch_data/
+airflow_logs/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# uv
+uv.lock
+
+# Airflow
+airflow/logs/
+airflow/plugins/

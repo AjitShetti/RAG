@@ -1,0 +1,23 @@
+# Airflow container requirements (separate from FastAPI image)
+# Install via: pip install -r airflow/requirements.txt
+
+# arXiv API client
+arxiv>=2.1.0
+
+# PDF extraction (lightweight — no PyTorch/transformers)
+pdfminer.six>=20231228
+
+# HTTP client (PDF download)
+httpx>=0.27.0
+
+# Retry with exponential backoff
+tenacity>=8.5.0
+
+# ORM (sync, psycopg2)
+sqlalchemy>=2.0.0
+psycopg2-binary>=2.9.9
+
+# Config
+pydantic>=2.9.0
+pydantic-settings>=2.5.0
+python-dotenv>=1.0.0
