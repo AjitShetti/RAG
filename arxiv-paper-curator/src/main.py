@@ -1,0 +1,35 @@
+"""FastAPI application entrypoint for arXiv Paper Curator API."""
+
+import logging
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI
+
+from .database import init_db
+from .routers.hybrid_search import router as hybrid_search_router
+from .routers.ping import router as ping_router
+from .routers.search import router as search_router
+
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan context manager for startup/shutdown tasks."""
+    logger.info("Initializing database tables...")
+    init_db()
+    yield
+    logger.info("Shutting down application...")
+
+
+app = FastAPI(
+    title="arXiv Paper Curator API",
+    description="Production-grade agentic RAG system for arXiv paper ingestion, indexing, and search.",
+    version="0.1.0",
+    lifespan=lifespan,
+)
+
+# Register routers
+app.include_router(ping_router)
+app.include_router(search_router, prefix="/api/v1")
+app.include_router(hybrid_search_router, prefix="/api/v1")

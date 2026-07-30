@@ -24,7 +24,7 @@ from dataclasses import dataclass, field
 import httpx
 import tenacity
 from pdfminer.high_level import extract_pages, extract_text
-from pdfminer.layout import LAParams, LTAnon, LTChar, LTTextBox, LTTextLine
+from pdfminer.layout import LAParams, LTChar, LTTextBox, LTTextLine
 
 logger = logging.getLogger(__name__)
 

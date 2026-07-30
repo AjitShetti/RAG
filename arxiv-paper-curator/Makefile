@@ -1,0 +1,12 @@
+setup:
+start:
+stop:
+restart:
+status:
+logs:
+health:
+format:
+lint:
+test:
+test-cov:
+clean:

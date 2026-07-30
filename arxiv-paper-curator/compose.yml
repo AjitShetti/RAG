@@ -1,0 +1,1 @@
+# compose.yml services: api, postgres, opensearch, opensearch-dashboards, airflow, redis, langfuse

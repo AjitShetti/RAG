@@ -30,6 +30,8 @@ dependencies = [
     "uvicorn[standard]>=0.30.6",
     # Env
     "python-dotenv>=1.0.0",
+    # OpenSearch client
+    "opensearch-py>=2.4.0",
 ]
 
 [project.optional-dependencies]
