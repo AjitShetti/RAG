@@ -208,7 +208,7 @@ def _cli() -> None:
 
     logger.info("Starting ingestion: query=%r max_results=%d", args.query, args.max_results)
     summary = run_ingestion(query=args.query, max_results=args.max_results)
-    print(f"\n✅  Ingestion complete — {summary}")
+    print(f"\n[OK] Ingestion complete -- {summary}")
 
 
 if __name__ == "__main__":

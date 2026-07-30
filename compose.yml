@@ -38,14 +38,15 @@ x-airflow-common: &airflow-common
 services:
   api:
     build:
-      context: ./api
+      context: ./arxiv-paper-curator
       target: runtime
     ports:
       - "8080:8000"
     volumes:
-      - ./api:/app
+      - ./arxiv-paper-curator:/app
     environment:
-      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - ASYNC_DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       - OPENSEARCH_URL=http://opensearch:9200
     networks:
       - rag-network
@@ -55,7 +56,7 @@ services:
       opensearch:
         condition: service_healthy
     restart: unless-stopped
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
 
   postgres:
     image: postgres:15-alpine

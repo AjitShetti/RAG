@@ -61,6 +61,17 @@ class Settings(BaseSettings):
         description="Default arXiv category/query for daily ingestion",
     )
 
+    # ── Embeddings & Chunking ──────────────────────────────────
+    embeddings_provider: str = Field(default="nvidia")
+    embeddings_api_key: str = Field(default="")
+    embeddings_model: str = Field(default="nvidia/nv-embedqa-e5-v5")
+    embeddings_api_url: str = Field(default="https://integrate.api.nvidia.com/v1/embeddings")
+    embeddings_dimensions: int = Field(default=1024)
+    embeddings_batch_size: int = Field(default=8)
+
+    chunk_max_tokens: int = Field(default=350)
+    chunk_overlap_tokens: int = Field(default=50)
+
 
 # Module-level singleton — import this everywhere
 settings = Settings()
