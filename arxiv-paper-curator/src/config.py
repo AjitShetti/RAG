@@ -32,16 +32,36 @@ class Settings(BaseSettings):
     opensearch_url: str = Field(default="http://localhost:9200")
 
     # ── LLM — provider-agnostic ───────────────────────────────
-    llm_provider: str = Field(default="openai")
-    llm_model: str = Field(default="gpt-4o-mini")
+    llm_provider: str = Field(default="groq")
+    llm_model: str = Field(default="llama-3.3-70b-versatile")
     llm_api_key: str = Field(default="")
+    llm_base_url: str = Field(
+        default="https://api.groq.com/openai/v1",
+        description="Optional base URL for OpenAI-compatible providers (Groq, NIM, Ollama, etc.)",
+    )
+
+    # ── RAG Settings ──────────────────────────────────────────
+    rag_top_k: int = Field(default=8, description="Default number of chunks to retrieve for RAG")
+    rag_max_context_tokens: int = Field(
+        default=3000, description="Token budget for context in LLM prompt"
+    )
+    rag_relevance_threshold: float = Field(
+        default=0.0, description="Minimum score threshold for retrieved chunks"
+    )
+
+    # ── Gradio ────────────────────────────────────────────────
+    gradio_port: int = Field(default=7860, description="Port for Gradio chat interface")
 
     # ── Redis ─────────────────────────────────────────────────
     redis_url: str = Field(default="redis://localhost:6379")
+    cache_enabled: bool = Field(default=True, description="Feature flag to enable/disable response caching")
+    cache_ttl_seconds: int = Field(default=3600, description="Cache TTL in seconds (default 1 hour)")
 
     # ── Langfuse ──────────────────────────────────────────────
     langfuse_public_key: str = Field(default="")
     langfuse_secret_key: str = Field(default="")
+    langfuse_host: str = Field(default="https://cloud.langfuse.com", description="Langfuse API host URL")
+    langfuse_enabled: bool = Field(default=True, description="Feature flag to enable/disable Langfuse tracing")
 
     # ── arXiv ingestion ───────────────────────────────────────
     arxiv_max_results: int = Field(
