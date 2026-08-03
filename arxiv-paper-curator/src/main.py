@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from .database import init_db
+from .routers.ask import router as ask_router
 from .routers.hybrid_search import router as hybrid_search_router
 from .routers.ping import router as ping_router
 from .routers.search import router as search_router
@@ -33,3 +34,4 @@ app = FastAPI(
 app.include_router(ping_router)
 app.include_router(search_router, prefix="/api/v1")
 app.include_router(hybrid_search_router, prefix="/api/v1")
+app.include_router(ask_router, prefix="/api/v1")

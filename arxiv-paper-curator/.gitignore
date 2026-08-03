@@ -1,1 +1,24 @@
-# .gitignore
+# Environment and secrets
+.env
+.env.test
+.env.local
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# Python bytecode and cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Testing and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
