@@ -16,6 +16,25 @@ from ..models.paper import Paper
 logger = logging.getLogger(__name__)
 
 
+def _sanitize(text: str | None) -> str | None:
+    """Strip characters that PostgreSQL cannot store in text columns.
+
+    Removes NUL bytes (0x00) which appear in some PDF extractions and cause:
+        ValueError: A string literal cannot contain NUL (0x00) characters.
+    Also strips other non-printable ASCII control chars (0x01-0x08, 0x0B-0x0C,
+    0x0E-0x1F) while preserving tab (0x09), LF (0x0A), and CR (0x0D).
+    """
+    if text is None:
+        return None
+    # Fast path: no control characters present
+    if "\x00" not in text:
+        return text
+    return "".join(
+        ch for ch in text
+        if ch >= "\x20" or ch in ("\x09", "\x0a", "\x0d")  # keep tab, LF, CR
+    )
+
+
 class PaperRepository:
     """CRUD operations for the Paper table."""
 
@@ -51,7 +70,7 @@ class PaperRepository:
     ) -> Paper:
         """Insert a new Paper or update the parsed-content fields of an existing one.
 
-        Metadata fields (title, authors, etc.) are always refreshed.
+        All text fields are sanitized to strip NUL bytes before storage.
         Returns the persisted Paper instance (not yet committed — caller commits).
         """
         paper = self._session.get(Paper, arxiv_id)
@@ -62,16 +81,16 @@ class PaperRepository:
         else:
             logger.debug("Updating existing paper %s", arxiv_id)
 
-        paper.title = title
+        paper.title = _sanitize(title) or title
         paper.authors = authors
-        paper.abstract = abstract
+        paper.abstract = _sanitize(abstract) or abstract
         paper.pdf_url = pdf_url
         paper.published_date = published_date
         paper.category = category
-        paper.full_text = full_text
+        paper.full_text = _sanitize(full_text)
         paper.sections = sections
         paper.parse_status = parse_status
-        paper.parse_error = parse_error
+        paper.parse_error = _sanitize(parse_error)
 
         self._session.flush()  # assign DB defaults (e.g. timestamps) without committing
         return paper

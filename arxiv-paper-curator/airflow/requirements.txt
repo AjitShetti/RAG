@@ -1,24 +1,24 @@
-# Airflow container requirements (separate from FastAPI image)
-# Install via: pip install -r airflow/requirements.txt
+# Airflow DAG-specific dependencies only
+# DO NOT include sqlalchemy, pydantic, or any package that Airflow pins internally.
+# These are installed via pip install --user inside the Airflow containers.
 
-# arXiv API client
+# arXiv API client (used by fetch_papers task)
 arxiv>=2.1.0
 
-# PDF extraction (lightweight — no PyTorch/transformers)
+# PDF extraction (used by parse_pdf task)
 pdfminer.six>=20231228
 
 # HTTP client (PDF download)
 httpx>=0.27.0
 
-# Retry with exponential backoff
+# Retry logic
 tenacity>=8.5.0
 
-# ORM (sync, psycopg2)
-sqlalchemy>=2.0.0
+# DB driver (sync, for DAG tasks writing to postgres)
 psycopg2-binary>=2.9.9
 
-# Config
-pydantic>=2.9.0
-pydantic-settings>=2.5.0
-python-dotenv>=1.0.0
+# OpenSearch client (for indexing tasks)
 opensearch-py>=2.4.0
+
+# Config reading
+python-dotenv>=1.0.0
