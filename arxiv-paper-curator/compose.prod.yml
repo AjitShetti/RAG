@@ -1,0 +1,86 @@
+# compose.prod.yml — Production config for EC2 t2.micro (1 GB RAM)
+# Usage: docker compose -f compose.prod.yml up -d
+#
+# Differences from local compose.yml:
+#   - OpenSearch heap reduced from 512m to 256m (fits in 1GB EC2)
+#   - Redis maxmemory capped at 100mb with LRU eviction
+#   - Postgres removed (uses RDS via DATABASE_URL in .env.prod)
+#   - Ports 9200 and 6379 NOT exposed to host (internal network only)
+#   - API uses --workers 1 (t2.micro has 1 vCPU)
+#   - All services have restart: unless-stopped for auto-recovery
+
+services:
+  opensearch:
+    image: opensearchproject/opensearch:2.13.0
+    container_name: arxiv_opensearch
+    environment:
+      - cluster.name=arxiv-cluster
+      - node.name=arxiv-node1
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      # Tuned to 256m to share 1GB EC2 RAM with api + redis
+      - "OPENSEARCH_JAVA_OPTS=-Xms256m -Xmx256m"
+      - DISABLE_SECURITY_PLUGIN=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+    networks:
+      - rag-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  redis:
+    image: redis:7-alpine
+    container_name: arxiv_redis
+    # Cap at 100mb with LRU eviction — safe for t2.micro
+    command: redis-server --maxmemory 100mb --maxmemory-policy allkeys-lru --save ""
+    volumes:
+      - redis_data:/data
+    networks:
+      - rag-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      target: runtime
+    container_name: arxiv_api
+    ports:
+      # Expose API to internet on port 8000
+      - "8000:8000"
+    env_file:
+      - .env.prod
+    networks:
+      - rag-network
+    depends_on:
+      opensearch:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    # Single worker — t2.micro has 1 vCPU; Telegram bot runs inside same process
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --workers 1
+
+networks:
+  rag-network:
+    driver: bridge
+
+volumes:
+  opensearch_data:
+  redis_data:

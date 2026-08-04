@@ -40,7 +40,7 @@ class Settings(BaseSettings):
         description="Optional base URL for OpenAI-compatible providers (Groq, NIM, Ollama, etc.)",
     )
 
-    # ── RAG Settings ──────────────────────────────────────────
+    # ── RAG & Agentic Settings ────────────────────────────────
     rag_top_k: int = Field(default=8, description="Default number of chunks to retrieve for RAG")
     rag_max_context_tokens: int = Field(
         default=3000, description="Token budget for context in LLM prompt"
@@ -48,20 +48,37 @@ class Settings(BaseSettings):
     rag_relevance_threshold: float = Field(
         default=0.0, description="Minimum score threshold for retrieved chunks"
     )
+    agentic_max_rewrites: int = Field(
+        default=2, description="Max rewrite iterations in agentic RAG"
+    )
+    agentic_grade_threshold: str = Field(
+        default="STRONG", description="Grade threshold for generation"
+    )
+
+    # ── Telegram Bot ──────────────────────────────────────────
+    telegram_bot_token: str = Field(default="", description="Telegram Bot API Token")
 
     # ── Gradio ────────────────────────────────────────────────
     gradio_port: int = Field(default=7860, description="Port for Gradio chat interface")
 
     # ── Redis ─────────────────────────────────────────────────
     redis_url: str = Field(default="redis://localhost:6379")
-    cache_enabled: bool = Field(default=True, description="Feature flag to enable/disable response caching")
-    cache_ttl_seconds: int = Field(default=3600, description="Cache TTL in seconds (default 1 hour)")
+    cache_enabled: bool = Field(
+        default=True, description="Feature flag to enable/disable response caching"
+    )
+    cache_ttl_seconds: int = Field(
+        default=3600, description="Cache TTL in seconds (default 1 hour)"
+    )
 
     # ── Langfuse ──────────────────────────────────────────────
     langfuse_public_key: str = Field(default="")
     langfuse_secret_key: str = Field(default="")
-    langfuse_host: str = Field(default="https://cloud.langfuse.com", description="Langfuse API host URL")
-    langfuse_enabled: bool = Field(default=True, description="Feature flag to enable/disable Langfuse tracing")
+    langfuse_host: str = Field(
+        default="https://cloud.langfuse.com", description="Langfuse API host URL"
+    )
+    langfuse_enabled: bool = Field(
+        default=True, description="Feature flag to enable/disable Langfuse tracing"
+    )
 
     # ── arXiv ingestion ───────────────────────────────────────
     arxiv_max_results: int = Field(
