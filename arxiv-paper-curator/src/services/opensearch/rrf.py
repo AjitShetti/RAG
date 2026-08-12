@@ -21,6 +21,7 @@ class RRFResult:
 
     doc_id: str
     rrf_score: float
+    normalized_score: float = 0.0
     keyword_rank: int | None = None
     semantic_rank: int | None = None
     contributed_by: list[str] = field(default_factory=list)
@@ -83,14 +84,21 @@ def rrf_fusion(
 
         contributed_map.setdefault(doc_id, set()).add("semantic")
 
+    # Determine max theoretical score for normalization
+    # If both legs produced hits, max possible score is 2 / (k + 1); if single leg, 1 / (k + 1).
+    num_active_legs = (1 if keyword_hits else 0) + (1 if semantic_hits else 0)
+    max_theoretical_rrf = (num_active_legs / (k + 1)) if num_active_legs > 0 else (1.0 / (k + 1))
+
     # Build final RRFResult list
     results: list[RRFResult] = []
     for doc_id, score in fused_scores.items():
         contrib = sorted(list(contributed_map[doc_id]))
+        norm_score = min(1.0, score / max_theoretical_rrf)
         results.append(
             RRFResult(
                 doc_id=doc_id,
                 rrf_score=round(score, 6),
+                normalized_score=round(norm_score, 4),
                 keyword_rank=keyword_ranks.get(doc_id),
                 semantic_rank=semantic_ranks.get(doc_id),
                 contributed_by=contrib,
