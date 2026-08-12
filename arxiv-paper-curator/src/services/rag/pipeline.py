@@ -23,6 +23,8 @@ from .prompt_builder import (
     load_system_prompt,
 )
 
+from ..embeddings import get_embedding_service
+
 logger = logging.getLogger(__name__)
 
 NO_CONTEXT_ANSWER = (
@@ -42,7 +44,7 @@ class RAGPipeline:
         langfuse_service: LangfuseService | None = None,
     ) -> None:
         self.opensearch = opensearch_service or OpenSearchService()
-        self.embedding = embedding_service
+        self.embedding = embedding_service or get_embedding_service()
         self.llm = llm_client or LLMClient()
         self.system_prompt = system_prompt or load_system_prompt()
         self.relevance_threshold = settings.rag_relevance_threshold

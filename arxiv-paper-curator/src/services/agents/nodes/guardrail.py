@@ -27,7 +27,7 @@ def guardrail_node(
     llm_client: LLMClient | None = None,
 ) -> dict[str, Any]:
     """Validate whether the input query is in-domain for arXiv CS/AI research."""
-    llm = llm_client or LLMClient()
+    llm = llm_client or LLMClient(model="llama-3.1-8b-instant")
     query = state.get("current_query") or state.get("original_query") or ""
 
     messages = [
