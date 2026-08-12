@@ -54,8 +54,8 @@ class RestEmbeddingService(EmbeddingService):
             "Content-Type": "application/json",
         }
 
-        # Truncate text to max 250 words to strictly enforce NVIDIA 512 subword token limit
-        safe_batch = [" ".join(text.split()[:250]) for text in batch]
+        # Truncate text to max 160 words / 1000 chars to strictly enforce NVIDIA 512 subword token limit
+        safe_batch = [" ".join(text[:1000].split()[:160]) for text in batch]
 
         payload: dict[str, Any] = {
             "input": safe_batch,

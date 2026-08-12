@@ -9,10 +9,13 @@ from ..state import AgentState
 logger = logging.getLogger(__name__)
 
 GRADE_SYSTEM_PROMPT = (
-    "You are a relevance grader evaluating whether retrieved scientific paper chunks contain "
-    "enough relevant context and information to answer the user query.\n"
-    "Respond ONLY with 'YES' if the retrieved chunks contain relevant and sufficient information to answer the query, "
-    "or 'NO' if they lack sufficient relevant context."
+    "You are an expert scientific relevance grader evaluating whether retrieved paper chunks "
+    "contain relevant context to answer the user's query.\n"
+    "Respond 'YES' if the chunks contain direct information, explanations, methods, definitions, "
+    "or key facts addressing the user's question.\n"
+    "Respond 'NO' only if the retrieved chunks are off-topic, completely unrelated, or lack "
+    "useful information to address the query.\n"
+    "Your response MUST contain 'YES' or 'NO'."
 )
 
 
@@ -21,7 +24,7 @@ def grade_node(
     llm_client: LLMClient | None = None,
 ) -> dict[str, Any]:
     """Evaluate relevance of retrieved_chunks against current_query via LLM."""
-    llm = llm_client or LLMClient()
+    llm = llm_client or LLMClient(model="llama-3.1-8b-instant")
     query = state.get("current_query") or state.get("original_query") or ""
     chunks = state.get("retrieved_chunks") or []
 
@@ -40,7 +43,7 @@ def grade_node(
 
     context_preview = "\n\n".join(
         [
-            f"--- Chunk {i + 1} (Score: {getattr(c, 'score', 0.0):.4f}) ---\n{getattr(c, 'text', '')[:400]}"
+            f"--- Chunk {i + 1} [{c.section_name}] (Score: {getattr(c, 'score', 0.0):.4f}) ---\n{getattr(c, 'text', '')[:1200]}"
             for i, c in enumerate(chunks[:5])
         ]
     )

@@ -50,9 +50,9 @@ class OpenAIProvider:
         )
 
     @retry(
-        retry=retry_if_exception_type((openai.APITimeoutError, openai.RateLimitError, openai.APIConnectionError)),
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=1, min=1, max=8),
+        retry=retry_if_exception_type((openai.APITimeoutError, openai.APIConnectionError)),
+        stop=stop_after_attempt(2),
+        wait=wait_exponential(multiplier=1, min=1, max=2),
         reraise=True,
     )
     def generate(

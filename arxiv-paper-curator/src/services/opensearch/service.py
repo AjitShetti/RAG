@@ -461,7 +461,7 @@ class OpenSearchService:
                     category=src.get("category", ""),
                     published_date=src.get("published_date"),
                     pdf_url=src.get("pdf_url", ""),
-                    score=r.rrf_score,
+                    score=r.normalized_score,
                     keyword_rank=r.keyword_rank,
                     semantic_rank=r.semantic_rank,
                     contributed_by=r.contributed_by,

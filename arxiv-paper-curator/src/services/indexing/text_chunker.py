@@ -35,7 +35,7 @@ class Chunk:
     @property
     def chunk_id(self) -> str:
         """Unique deterministic identifier for this chunk."""
-        clean_section = re.sub(r"[^a-zA-Z0-9_]", "_", self.section_name.lower())
+        clean_section = re.sub(r"[^a-zA-Z0-9_]", "_", self.section_name.lower())[:64]
         return f"{self.paper_id}_{clean_section}_{self.chunk_index}"
 
 
@@ -47,7 +47,7 @@ class TextChunker:
         max_tokens: int | None = None,
         overlap_tokens: int | None = None,
     ) -> None:
-        self.max_tokens = max_tokens or settings.chunk_max_tokens
+        self.max_tokens = max_tokens or min(settings.chunk_max_tokens, 200)
         self.overlap_tokens = overlap_tokens or settings.chunk_overlap_tokens
 
     @staticmethod
@@ -63,6 +63,31 @@ class TextChunker:
         clean_heading = re.sub(r"^\d+[\.\s]*", "", clean_heading).strip()
         return bool(EXCLUDED_SECTIONS_PATTERN.match(clean_heading))
 
+    @staticmethod
+    def _extract_section_name(text: str, default_section: str = "Full Text") -> str:
+        """Extract exact section or subsection heading from chunk text or prefix."""
+        # 1. Embedded "Section: <Heading>" prefix check
+        if match := re.search(r"Section:\s*([^\n\.]+)", text):
+            extracted = match.group(1).strip()
+            if extracted and extracted.lower() != "full text":
+                return extracted
+
+        # 2. Check for leading numbered or standard section headings
+        lines = [line.strip() for line in text.split("\n") if line.strip()]
+        for line in lines[:3]:
+            # Numbered headings like "4.2 Method" or "5.1 Hierarchical Cluster Routing"
+            if re.match(r"^\d+(\.\d+)*\s+[A-Z]", line):
+                return line
+            # Standard section names
+            if line in (
+                "Introduction", "Related Work", "Method", "Methods", "Methodology",
+                "Architecture", "Experiments", "Experimental Evaluation", "Results",
+                "Discussion", "Conclusion", "Conclusions", "Supplementary Material"
+            ):
+                return line
+
+        return default_section
+
     def _split_text(
         self,
         text: str,
@@ -77,10 +102,11 @@ class TextChunker:
 
         # If section fits in max_tokens, return single chunk
         if len(words) <= self.max_tokens:
+            chunk_sec = self._extract_section_name(text, default_section=section_name) if section_name == "Full Text" else section_name
             return [
                 Chunk(
                     paper_id=paper_id,
-                    section_name=section_name,
+                    section_name=chunk_sec,
                     chunk_index=start_chunk_index,
                     text=text,
                     token_count=len(words),
@@ -95,10 +121,11 @@ class TextChunker:
         for i in range(0, len(words), step):
             chunk_words = words[i : i + self.max_tokens]
             chunk_text = " ".join(chunk_words)
+            chunk_sec = self._extract_section_name(chunk_text, default_section=section_name) if section_name == "Full Text" else section_name
             chunks.append(
                 Chunk(
                     paper_id=paper_id,
-                    section_name=section_name,
+                    section_name=chunk_sec,
                     chunk_index=current_idx,
                     text=chunk_text,
                     token_count=len(chunk_words),
@@ -111,6 +138,41 @@ class TextChunker:
                 break
 
         return chunks
+
+    @staticmethod
+    def extract_sections_from_text(full_text: str) -> list[dict[str, str]]:
+        """Parse full text into sections using regex matching on numbered and standard headings."""
+        if not full_text:
+            return []
+
+        lines = full_text.split("\n")
+        sections: list[dict[str, str]] = []
+        current_heading = "Introduction"
+        current_lines: list[str] = []
+
+        heading_pattern = re.compile(
+            r"^(\d+(\.\d+)*\s+[A-Z][^\n]{2,80}|Abstract|Introduction|Related Work|Methods?|Architecture|Experiments?|Results|Discussion|Conclusions?|Supplementary Material)$"
+        )
+
+        for line in lines:
+            stripped = line.strip()
+            # Ignore table/figure numbers or address lines that look like numbers
+            if heading_pattern.match(stripped) and len(stripped) < 80 and not stripped.endswith((".", ",", ";")):
+                if current_lines:
+                    sec_text = "\n".join(current_lines).strip()
+                    if sec_text:
+                        sections.append({"heading": current_heading, "text": sec_text})
+                    current_lines = []
+                current_heading = stripped
+            else:
+                current_lines.append(line)
+
+        if current_lines:
+            sec_text = "\n".join(current_lines).strip()
+            if sec_text:
+                sections.append({"heading": current_heading, "text": sec_text})
+
+        return sections
 
     def chunk_paper(self, paper: Paper) -> list[Chunk]:
         """Produce section-aware chunks for a given Paper instance."""
@@ -132,8 +194,10 @@ class TextChunker:
             global_chunk_index += len(abs_chunks)
 
         # 2. Iterate through parsed PDF sections
-        if paper.sections:
-            for section in paper.sections:
+        sections = paper.sections if paper.sections else self.extract_sections_from_text(paper.full_text or "")
+
+        if sections:
+            for section in sections:
                 if not isinstance(section, dict):
                     continue
 
@@ -152,14 +216,6 @@ class TextChunker:
                 chunks.extend(sec_chunks)
                 global_chunk_index += len(sec_chunks)
 
-        # 3. Fallback: if no sections were parsed, use full_text or abstract alone
-        elif not chunks and paper.full_text and paper.full_text.strip():
-            sec_chunks = self._split_text(
-                text=paper.full_text.strip(),
-                paper_id=paper.arxiv_id,
-                section_name="Full Text",
-                start_chunk_index=global_chunk_index,
-            )
-            chunks.extend(sec_chunks)
-
         return chunks
+
+

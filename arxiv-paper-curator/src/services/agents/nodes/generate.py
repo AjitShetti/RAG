@@ -16,8 +16,9 @@ def generate_node(
 ) -> dict[str, Any]:
     """Generate final answer using retrieved_chunks and RAG prompt assembly."""
     pipeline = rag_pipeline or RAGPipeline()
-    query = state.get("current_query") or state.get("original_query") or ""
+    query = state.get("original_query") or state.get("current_query") or ""
     chunks = state.get("retrieved_chunks") or []
+    grading_result = state.get("grading_result", "strong")
 
     if not chunks:
         logger.info("No candidate chunks available for generation")
@@ -65,6 +66,9 @@ def generate_node(
     try:
         llm_res = pipeline.llm.generate(messages=messages)
         final_answer = llm_res.content
+        if grading_result == "weak":
+            disclaimer = "⚠️ *Low Confidence Notice: The retrieved context may be incomplete or weakly relevant to the query.*\n\n"
+            final_answer = disclaimer + final_answer
         prompt_tokens = llm_res.prompt_tokens
         completion_tokens = llm_res.completion_tokens
     except Exception as e:
