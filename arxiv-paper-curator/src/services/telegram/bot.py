@@ -36,11 +36,12 @@ def format_agentic_response(response: AgenticAskResponse) -> str:
 
     # Sources section
     if response.sources:
-        lines.append("*Sources:*")
+        distinct_papers = len(set(s.paper_id for s in response.sources))
+        lines.append(f"*Sources ({response.used_chunk_count} chunks from {distinct_papers} papers):*")
         for idx, src in enumerate(response.sources, 1):
             lines.append(
                 f"{idx}. [{src.title}]({src.pdf_url})\n"
-                f"   _Section:_ {src.section_name} (Relevance: {src.relevance_score})\n"
+                f"   _Section:_ {src.section_name} (Relevance: {src.relevance_score:.2f})\n"
                 f"   _{src.snippet}_"
             )
         lines.append("")
